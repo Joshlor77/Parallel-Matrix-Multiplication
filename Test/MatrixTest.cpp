@@ -17,10 +17,13 @@ void printMat(matrix<numeric>& X){
 }
 
 int main(){
-    matrix<float> A(16, 16, 0), B(16, 16, 2);
+    matrix<float> A(2, 3, 0), B(3, 2, 0);
 
     for (int i = 0; i < A.n; i++){
         A[i*A.n + i] = 1;
+    }
+    for (int i = 0; i < B.n; i++){
+        B[i*A.n + i] = 1;
     }
 
     matrix<float> C = matrixMultiply(A, B, 2, 2);

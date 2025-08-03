@@ -5,8 +5,6 @@
 #include <exception>
 #include <future>
 
-#include <iostream>
-
 //m x n matrix. m rows, n columns. Non-sparse
 template <typename numeric>
 struct matrix {
@@ -38,27 +36,31 @@ matrix<numeric> matrixMultiply(matrix<numeric>& A, matrix<numeric>& B, int chunk
     auto multiplyChunk = [&A, &B, &C](int startX, int endX, int startY, int endY){
         for (int rowC = startY; rowC < endY; rowC++){
             int rowCIdx = C.rowIdx(rowC);
+            int rowAIdx = A.rowIdx(rowC);
             for (int colC = startX; colC < endX; colC++){
                 int entryCIdx = rowCIdx + colC;
-                int rowAIdx = A.rowIdx(rowC);
                 int colBIdx = colC;
                 for (int i = 0; i < A.n; i++){
-                    C[entryCIdx] += A[rowAIdx + i] * B[B.rowIdx(colC) + colBIdx];
+                    C[entryCIdx] += A[rowAIdx + i] * B[B.rowIdx(i) + colBIdx];
                 }
             }
         }
     };
 
-    int chunkX = (C.m - 1) / chunkSizeX + 1;
-    int chunkY = (C.n - 1) / chunkSizeY + 1;
-    std::vector<std::future<void>> futures(chunkX * chunkY);
-
-    for(int i = 0; i < chunkX; i++){
-        int x = i * chunkSizeX;
-        int futX = i * chunkX;
-        for (int j = 0; j < chunkY; j++){
-            int y = j *chunkSizeY;
-            futures[futX + j] = pool.submit(std::bind(multiplyChunk, x, x + chunkSizeX, y, y + chunkSizeY));
+    int chunkX = (C.n - 1) / chunkSizeX + 1;
+    int chunkY = (C.m - 1) / chunkSizeY + 1;
+    int chunks = chunkX * chunkY;
+    std::vector<std::future<void>> futures(chunks);
+    int futureIndex = 0;
+    for (int y = 0; y < chunkY; y++){
+        int startY = y * chunkSizeY;
+        int endY = std::min(startY + chunkSizeY, C.m);
+        for (int x = 0; x < chunkX; x++){
+            int startX = x * chunkSizeX;
+            int endX = std::min(startX + chunkSizeX, C.n);
+            futures[futureIndex++] = pool.submit( [=, &A, &B, &C] {
+                multiplyChunk(startX, endX, startY, endY);
+            });
         }
     }
     for (auto& fut : futures){
