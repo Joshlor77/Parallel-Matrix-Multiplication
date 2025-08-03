@@ -2,7 +2,6 @@
 
 #include <mutex>
 #include <memory>
-
 #include <iostream>
 
 /* Mutex-based Queue
@@ -39,7 +38,7 @@ public:
         }
     }
 
-    std::shared_ptr<T> pop(){
+    std::shared_ptr<T> tryPop(){
         std::lock_guard<mutexType> headlk(headMut);
         {
             std::lock_guard taillk(tailMut);
@@ -50,6 +49,20 @@ public:
         std::unique_ptr<node> oldHeadPtr(std::move(headPtr));
         headPtr = std::unique_ptr(std::move(oldHeadPtr->_next));
         return data;
+    }
+
+    bool tryPop(T& returnVariable){
+        std::lock_guard<mutexType> headlk(headMut);
+        {
+            std::lock_guard taillk(tailMut);
+            if (headPtr.get() == tailPtr)
+                return false;
+        }
+        returnVariable = std::move(*(headPtr->_data));
+        std::unique_ptr<node> oldHeadPtr(std::move(headPtr));
+        headPtr = std::unique_ptr(std::move(oldHeadPtr->_next));
+        
+        return true;
     }
 
     bool empty() const {

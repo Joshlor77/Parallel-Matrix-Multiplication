@@ -1,4 +1,4 @@
-#include "../Implementation/MutexConcurrentQueue.h"
+#include "../Implementation/LockedConcurrentQueue.h"
 
 #include <assert.h>
 #include <iostream>
@@ -27,21 +27,26 @@ public:
         assert(Q.empty());
         std::cout << "Queue is empty\n";
         std::cout << "Attempting empty Pop\n";
-        assert(Q.pop() == std::shared_ptr<T>());
-        std::cout << "Queue successfully returned empty shared_ptr<T>\n\n";
+        assert(Q.tryPop() == std::shared_ptr<T>());
+        std::cout << "Queue successfully returned empty shared_ptr<T>\n";
+        T value;
+        assert(!Q.tryPop(value));
+        std::cout << "Queue succesfully returned false\n\n";
     }
 
     static void PushPopCheck(ConcurrentQueue<T>& Q){
         currentCheckNum();
-        std::cout << "Pushing element 42\n";
+        T element1 = 420;
+        T element2 = 69;
+        std::cout << "Pushing element " << element1 << '\n';
         Q.push(420);
-        std::cout << "Pushing element 10\n";
+        std::cout << "Pushing element " << element2 << '\n';
         Q.push(69);
-        T poppedElement = *Q.pop();
-        assert(poppedElement == 420);
+        T poppedElement = *Q.tryPop();
+        assert(poppedElement == element1);
         std:: cout << "Popped element " << poppedElement << " is same as pushed element\n";
-        poppedElement = *Q.pop();
-        assert(poppedElement == 69);
+        Q.tryPop(poppedElement);
+        assert(poppedElement == element2);
         std:: cout << "Popped element " << poppedElement << " is same as pushed element\n\n";
     }
 };
